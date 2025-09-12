@@ -7,6 +7,23 @@ listInt.filter(x => x%2 ===0).forEach(x => console.log);
 const sum = listInt.reduce((acc, x) => acc + x, 0);
 console.log(sum);
 
+let people = [
+  { id: 1, name: "Alice", age: 19 },
+  { id: 2, name: "Bob", age: 25 },
+  { id: 3, name: "Charlie", age: 30 },
+  { id: 4, name: "David", age: 18 }
+];
+
+console.log("List:");
+for (let p of people) {
+  console.log(`ID: ${p.id}, Name: ${p.name}, Age: ${p.age}`);
+  if (p.age > 20) {
+    console.log(`People more than 20 ages: ${p.name}`);
+  }
+}
+
+
+
 const myPromise = new Promise((resolve, reject) => {
     //Asynchronous operation
     //Resolve the promise when the operation is successful
