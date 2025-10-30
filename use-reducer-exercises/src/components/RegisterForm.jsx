@@ -148,6 +148,11 @@ export default function RegisterForm() {
         </Toast>
       </ToastContainer>
 
+      //Toast để hiện thông báo đăng ký thành công
+      /* show = {showToast}
+      
+      */
+
       <Modal show={showModal} onHide={() => dispatch({ type: "CLOSE_MODAL" })} centered>
         <Modal.Header closeButton>
           <Modal.Title>Thông tin đăng ký</Modal.Title>

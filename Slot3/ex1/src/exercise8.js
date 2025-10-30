@@ -15,3 +15,14 @@ const stats = ages.reduce((acc, age) => {
 
     console.log(`Total: ${stats.total}, Min: ${stats.min}, Max: ${stats.max}`);
     console.log("Buckets:", stats.buckets);
+
+    const result = {
+    total: stats.total,
+    min: stats.min,
+    max: stats.max,
+    avg: (stats.total / ages.length).toFixed(2),
+    buckets: stats.buckets
+
+    
+    };    console.log(result);
+    console.log(JSON.stringify(result, null, 2));
