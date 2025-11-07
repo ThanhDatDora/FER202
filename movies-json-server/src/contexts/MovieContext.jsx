@@ -1,93 +1,115 @@
 // src/contexts/MovieContext.jsx
-import React, { createContext, useReducer, useContext, useEffect, useCallback } from 'react';
+import React, {
+  createContext,
+  useReducer,
+  useContext,
+  useEffect,
+  useCallback,
+} from 'react';
 import { movieReducer, initialMovieState } from '../reducers/movieReducers';
-import movieApi from '../api/moviesApi'; // Import Axios
+import movieApi from '../api/moviesApi';
 
 // Contexts
-export const MovieStateContext = createContext(initialMovieState); 
-export const MovieDispatchContext = createContext(null);          
+export const MovieStateContext = createContext(initialMovieState);
+export const MovieDispatchContext = createContext(null);
 
 // Custom Hooks
 export const useMovieState = () => useContext(MovieStateContext);
 export const useMovieDispatch = () => useContext(MovieDispatchContext);
 
-// MovieProvider Component
 export const MovieProvider = ({ children }) => {
   const [state, dispatch] = useReducer(movieReducer, initialMovieState);
 
-  // Hàm READ: Tải lại dữ liệu (Axios GET)
+  // READ: lấy danh sách phim
   const fetchMovies = useCallback(async () => {
     dispatch({ type: 'START_LOADING' });
     try {
-      const response = await movieApi.get('/movies');
-      dispatch({ type: 'SET_MOVIES', payload: response.data });
-    } catch (error) {
-      console.error("Lỗi khi tải danh sách phim:", error);
-      // Giữ state cũ nếu lỗi (hoặc [] nếu ban đầu chưa có)
-      dispatch({ type: 'SET_MOVIES', payload: [] }); 
+      const res = await movieApi.get('/movies');
+      const movies = res.data || [];
+      dispatch({ type: 'SET_MOVIES', payload: movies });
+      dispatch({ type: 'SET_FILTERED_MOVIES', payload: movies });
+    } catch (err) {
+      console.error('Lỗi khi tải danh sách phim:', err);
+      dispatch({ type: 'SET_MOVIES', payload: [] });
+      dispatch({ type: 'SET_FILTERED_MOVIES', payload: [] });
     }
-  }, [dispatch]);
+  }, []);
 
-  // Hàm fetch genres từ API
+  // READ: lấy danh sách thể loại
   const fetchGenres = useCallback(async () => {
     try {
-      const response = await movieApi.get('/genres');
-      dispatch({ type: 'SET_GENRES', payload: response.data });
-    } catch (error) {
-      console.error("Lỗi khi tải danh sách thể loại:", error);
+      const res = await movieApi.get('/genres');
+      dispatch({ type: 'SET_GENRES', payload: res.data || [] });
+    } catch (err) {
+      console.error('Lỗi khi tải danh sách thể loại:', err);
       dispatch({ type: 'SET_GENRES', payload: [] });
     }
-  }, [dispatch]); 
-  
-  // Hàm DELETE: Xóa phim (Axios DELETE)
-  const confirmDelete = useCallback(async (id) => {
-    dispatch({ type: 'CLOSE_DELETE_MODAL' });
-    dispatch({ type: 'START_LOADING' });
+  }, []);
 
-    try {
-      await movieApi.delete(`/movies/${id}`);
-      fetchMovies(); // Tải lại dữ liệu
-    } catch (error) {
-      console.error("Lỗi khi xóa phim:", error);
-      fetchMovies(); // Reload to get current state from server
-    }
-  }, [fetchMovies]);
+  // DELETE
+  const confirmDelete = useCallback(
+    async (id) => {
+      if (id === undefined || id === null) return;
 
-  // Hàm CREATE/UPDATE: Xử lý POST và PUT (Axios POST/PUT)
-  const handleCreateOrUpdate = useCallback(async (dataToSend, isEditing, isEditingId) => {
-    dispatch({ type: 'START_LOADING' });
-    
-    try {
-      if (isEditing) {
-        // UPDATE (PUT)
-        await movieApi.put(`/movies/${isEditingId}`, dataToSend);
-      } else {
-        // CREATE (POST)
-        await movieApi.post('/movies', dataToSend);
+      const numericId = Number(id); // 👈 ép số để chắc chắn trùng với json-server
+      // đóng modal trước
+      dispatch({ type: 'CLOSE_DELETE_MODAL' });
+      // xóa local ngay để UI biến mất liền
+      dispatch({ type: 'DELETE_LOCAL_MOVIE', payload: numericId });
+      // loading
+      dispatch({ type: 'START_LOADING' });
+
+      try {
+        await movieApi.delete(`/movies/${numericId}`);
+        // load lại để đồng bộ với db.json
+        await fetchMovies();
+      } catch (err) {
+        console.error('Lỗi khi xóa phim:', err);
+        // nếu lỗi, vẫn fetch về trạng thái thật
+        await fetchMovies();
       }
-      
-      dispatch({ type: 'RESET_FORM' }); 
-      fetchMovies(); 
-      return true;
-    } catch (error) {
-      console.error("Lỗi thao tác CREATE/UPDATE:", error);
-      fetchMovies(); // Reload to get current state from server
-      return false;
-    }
-  }, [fetchMovies]);
+    },
+    [fetchMovies]
+  );
 
+  // CREATE / UPDATE
+  const handleCreateOrUpdate = useCallback(
+    async (dataToSend, isEditing, isEditingId) => {
+      dispatch({ type: 'START_LOADING' });
+      try {
+        if (isEditing) {
+          const numericId = Number(isEditingId);
+          await movieApi.put(`/movies/${numericId}`, dataToSend);
+        } else {
+          await movieApi.post('/movies', dataToSend);
+        }
+
+        dispatch({ type: 'RESET_FORM' });
+        await fetchMovies();
+        return true;
+      } catch (err) {
+        console.error('Lỗi thao tác CREATE/UPDATE:', err);
+        await fetchMovies();
+        return false;
+      }
+    },
+    [fetchMovies]
+  );
+
+  // chạy lần đầu
   useEffect(() => {
     fetchMovies();
     fetchGenres();
   }, [fetchMovies, fetchGenres]);
 
-  // Giá trị của Dispatch Context
   const dispatchValue = {
-      dispatch, 
-      fetchMovies,
-      fetchGenres,
-      confirmDelete,
-      handleCreateOrUpdate 
+    dispatch,
+    fetchMovies,
+    fetchGenres,
+    confirmDelete,
+    handleCreateOrUpdate,
+    setFilteredMovies: (list) =>
+      dispatch({ type: 'SET_FILTERED_MOVIES', payload: list }),
   };
 
   return (
@@ -98,4 +120,3 @@ export const MovieProvider = ({ children }) => {
     </MovieStateContext.Provider>
   );
 };
-

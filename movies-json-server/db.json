@@ -110,14 +110,14 @@
     },
     {
       "id": 2,
-      "username": "Viewer1",
+      "username": "viewer1@gmail.com",
       "password": "viewer123",
       "fullName": "Viewer User",
       "role": "viewer"
     },
     {
       "id": 3,
-      "username": "Viewer2",
+      "username": "iewer2@gmail.com",
       "password": "viewer123",
       "fullName": "Viewer User",
       "role": "viewer"

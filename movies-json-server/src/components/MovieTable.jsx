@@ -1,5 +1,5 @@
 // src/components/MovieTable.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import { Table, Button, Image, Modal, Alert, Spinner } from 'react-bootstrap';
 import { useMovieState, useMovieDispatch } from '../contexts/MovieContext';
 
@@ -13,6 +13,9 @@ const MovieTable = () => {
   } = useMovieState();
 
   const { dispatch, confirmDelete } = useMovieDispatch();
+
+  const [detailMovie, setDetailMovie] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   const genreMap = genres.reduce((map, genre) => {
     map[genre.id] = genre.name;
@@ -32,7 +35,17 @@ const MovieTable = () => {
     confirmDelete(movieToDelete.id);
   };
 
-  const renderPoster = (movie) => {
+  const handleViewClick = (movie) => {
+    setDetailMovie(movie);
+    setShowDetailModal(true);
+  };
+
+  const handleCloseDetail = () => {
+    setShowDetailModal(false);
+    setDetailMovie(null);
+  };
+
+  const renderPoster = (movie, size = 50) => {
     const src =
       movie.avatar ||
       movie.poster ||
@@ -41,7 +54,7 @@ const MovieTable = () => {
       <Image
         src={src}
         alt={movie.title}
-        style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+        style={{ width: `${size}px`, height: `${size}px`, objectFit: 'cover' }}
         rounded
       />
     );
@@ -101,12 +114,18 @@ const MovieTable = () => {
                   <td>{movie.duration} phút</td>
                   <td>{movie.year}</td>
                   <td>{movie.country}</td>
-                  <td>
+                  <td className="d-flex gap-2 flex-wrap">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleViewClick(movie)}
+                    >
+                      View
+                    </Button>
                     <Button
                       variant="primary"
                       size="sm"
                       onClick={() => handleEditClick(movie)}
-                      className="me-2"
                     >
                       Sửa
                     </Button>
@@ -125,6 +144,7 @@ const MovieTable = () => {
         </tbody>
       </Table>
 
+      {/* MODAL XÁC NHẬN XÓA */}
       <Modal
         show={showDeleteModal}
         onHide={() => dispatch({ type: 'CLOSE_DELETE_MODAL' })}
@@ -135,8 +155,8 @@ const MovieTable = () => {
         <Modal.Body>
           {movieToDelete ? (
             <>
-              Bạn có chắc chắn muốn xóa phim
-              {' '}<strong>{movieToDelete.title}</strong> (ID: {movieToDelete.id}) không?
+              Bạn có chắc chắn muốn xóa phim{' '}
+              <strong>{movieToDelete.title}</strong> (ID: {movieToDelete.id}) không?
             </>
           ) : (
             'Không có phim để xóa.'
@@ -149,8 +169,63 @@ const MovieTable = () => {
           >
             Hủy bỏ
           </Button>
-          <Button variant="danger" onClick={handleConfirmDelete} disabled={!movieToDelete}>
+          <Button
+            variant="danger"
+            onClick={handleConfirmDelete}
+            disabled={!movieToDelete}
+          >
             Xác nhận Xóa
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* MODAL XEM CHI TIẾT */}
+      <Modal
+        show={showDetailModal}
+        onHide={handleCloseDetail}
+        size="lg"
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>
+            {detailMovie ? `Chi tiết phim: ${detailMovie.title}` : 'Chi tiết phim'}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {detailMovie ? (
+            <div className="d-flex gap-4 flex-wrap">
+              <div>
+                {renderPoster(detailMovie, 180)}
+              </div>
+              <div className="flex-grow-1">
+                <p><strong>ID:</strong> {detailMovie.id}</p>
+                <p><strong>Tên phim:</strong> {detailMovie.title}</p>
+                <p><strong>Thể loại:</strong> {genreMap[detailMovie.genreId] || 'Unknown'}</p>
+                <p><strong>Thời lượng:</strong> {detailMovie.duration} phút</p>
+                <p><strong>Năm:</strong> {detailMovie.year}</p>
+                <p><strong>Quốc gia:</strong> {detailMovie.country}</p>
+                <p><strong>Mô tả:</strong></p>
+                <p>{detailMovie.description}</p>
+              </div>
+            </div>
+          ) : (
+            <p>Không có dữ liệu</p>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          {detailMovie ? (
+            <Button
+              variant="warning"
+              onClick={() => {
+                dispatch({ type: 'OPEN_EDIT_MODAL', payload: detailMovie });
+                handleCloseDetail();
+              }}
+            >
+              Edit this movie
+            </Button>
+          ) : null}
+          <Button variant="secondary" onClick={handleCloseDetail}>
+            Đóng
           </Button>
         </Modal.Footer>
       </Modal>

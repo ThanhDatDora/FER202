@@ -1,3 +1,5 @@
+// src/reducers/movieReducers.jsx
+
 export const initialMovieState = {
   movies: [],              // Toàn bộ phim từ API
   filteredMovies: [],      // Dữ liệu sau khi lọc / sắp xếp
@@ -27,35 +29,39 @@ export const initialMovieState = {
 
 // Hàm phụ để áp dụng filter
 function applyFilter(movies, filter) {
-  let result = [...movies];
+  let result = Array.isArray(movies) ? [...movies] : [];
 
   // Tìm kiếm theo tên
   if (filter.search) {
     const keyword = filter.search.toLowerCase();
-    result = result.filter(m =>
-      m.title.toLowerCase().includes(keyword)
+    result = result.filter((m) =>
+      (m.title || '').toLowerCase().includes(keyword)
     );
   }
 
   // Lọc theo thể loại
   if (filter.genreId) {
-    result = result.filter(m => String(m.genreId) === String(filter.genreId));
+    result = result.filter(
+      (m) => String(m.genreId) === String(filter.genreId)
+    );
   }
 
   // Lọc theo thời lượng
   if (filter.duration === 'short') {
-    result = result.filter(m => m.duration <= 100);
+    result = result.filter((m) => Number(m.duration) <= 100);
   } else if (filter.duration === 'medium') {
-    result = result.filter(m => m.duration > 100 && m.duration <= 130);
+    result = result.filter(
+      (m) => Number(m.duration) > 100 && Number(m.duration) <= 130
+    );
   } else if (filter.duration === 'long') {
-    result = result.filter(m => m.duration > 130);
+    result = result.filter((m) => Number(m.duration) > 130);
   }
 
   // Sắp xếp
   if (filter.sort === 'title_asc') {
-    result.sort((a, b) => a.title.localeCompare(b.title));
+    result.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
   } else if (filter.sort === 'title_desc') {
-    result.sort((a, b) => b.title.localeCompare(a.title));
+    result.sort((a, b) => (b.title || '').localeCompare(a.title || ''));
   }
 
   return result;
@@ -67,12 +73,25 @@ export const movieReducer = (state, action) => {
     case 'SET_MOVIES': {
       const movies = action.payload || [];
       const filtered = applyFilter(movies, state.filter);
-      return { ...state, movies, filteredMovies: filtered, loading: false };
+      return {
+        ...state,
+        movies,
+        filteredMovies: filtered,
+        loading: false
+      };
+    }
+
+    // Trường hợp bạn muốn set trực tiếp filteredMovies (hiếm)
+    case 'SET_FILTERED_MOVIES': {
+      return {
+        ...state,
+        filteredMovies: action.payload || []
+      };
     }
 
     // Khi load thể loại từ API
     case 'SET_GENRES':
-      return { ...state, genres: action.payload };
+      return { ...state, genres: action.payload || [] };
 
     // Khi bắt đầu loading
     case 'START_LOADING':
@@ -89,13 +108,19 @@ export const movieReducer = (state, action) => {
       };
 
     // Mở modal sửa
-    case 'OPEN_EDIT_MODAL':
+    case 'OPEN_EDIT_MODAL': {
+      const movie = action.payload;
       return {
         ...state,
-        currentMovie: action.payload,
-        isEditing: action.payload.id,
+        currentMovie: {
+          ...movie,
+          // ép genreId sang string để <Form.Select> nhận đúng
+          genreId: movie.genreId ? String(movie.genreId) : ''
+        },
+        isEditing: movie.id,
         showEditModal: true
       };
+    }
 
     // Đóng modal sửa
     case 'CLOSE_EDIT_MODAL':
@@ -121,6 +146,20 @@ export const movieReducer = (state, action) => {
         movieToDelete: null,
         showDeleteModal: false
       };
+
+    // ✅ XÓA LOCAL NGAY LẬP TỨC
+    case 'DELETE_LOCAL_MOVIE': {
+      const id = Number(action.payload);
+      const newMovies = state.movies.filter((m) => Number(m.id) !== id);
+      const newFiltered = applyFilter(newMovies, state.filter);
+      return {
+        ...state,
+        movies: newMovies,
+        filteredMovies: newFiltered,
+        movieToDelete: null,
+        showDeleteModal: false
+      };
+    }
 
     // Reset form sau khi thêm / sửa xong
     case 'RESET_FORM':

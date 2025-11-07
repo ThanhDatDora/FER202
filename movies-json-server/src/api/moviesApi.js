@@ -1,11 +1,12 @@
+// src/api/moviesApi.js
 import axios from 'axios';
 
 const movieApi = axios.create({
-  baseURL: 'http://localhost:3001', // Base URL của json-server
-  timeout: 5000, 
+  baseURL: 'http://localhost:3001',
   headers: {
-    'Content-Type': 'application/json',
+    'Content-Type': 'application/json'
   },
+  timeout: 5000
 });
 
 export default movieApi;
