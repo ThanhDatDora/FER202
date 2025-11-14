@@ -1,0 +1,10 @@
+{
+  "users": [
+    { "id": 1, "name": "Alice", "isAdmin": false },
+    { "id": 2, "name": "Bob", "isAdmin": true }
+  ],
+  "payments": [
+    { "id": 1, "amount": 100000, "method": "VNPAY", "status": "SUCCESS" },
+    { "id": 2, "amount": 50000, "method": "CARD", "status": "FAILED" }
+  ]
+}

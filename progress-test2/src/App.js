@@ -1,8 +1,7 @@
-import React from 'react';
-import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import { AuthProvider } from './contexts/AuthContext';
-import { PaymentProvider } from './contexts/PaymentContext';
+import { PaymentProvider } from './contexts/PaymentContext.jsx';
 import AppRoutes from './routes/AppRoutes';
 
 function App() {
